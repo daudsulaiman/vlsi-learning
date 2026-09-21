@@ -1,262 +1,92 @@
 # Notes — Problem 02
 
-## BAGIAN A — Syntax / Concept Reference
+## BAGIAN A — Concept Reference
 
-Reference ini mengingatkan syntax yang sudah dipelajari. Nama dan contoh bersifat generik, bukan rancangan untuk problem. Kamu menentukan sendiri expression, hardware, serta batas module yang sesuai spesifikasi.
+Satu `module` dapat memiliki beberapa output. Port ditulis sebagai `input wire` atau `output wire`; `wire` internal menyambungkan logic di dalam module. Setiap bit memiliki satu penggerak yang jelas.
 
-### Module, port, dan wire
+`assign z = p ^ q;` adalah contoh generik continuous assignment: hubungan terus berlaku, bukan instruksi yang hanya dijalankan sekali. Beberapa `assign` menggambarkan hubungan yang berjalan bersamaan, bukan urutan langkah software.
 
-`module` mendefinisikan satu jenis blok. Port menjadi batas input-output blok tersebut. `wire` menyatakan sambungan signal; deklarasinya sendiri tidak berarti ada penyimpanan.
+- `~`, `&`, `|`, `^`: bitwise NOT, AND, OR, XOR; bekerja pada setiap posisi bit.
+- `!`, `&&`, `||`: operasi logical, menghasilkan 1 bit.
+- Pada vector, `~` berbeda dari `!`, dan `&` berbeda dari `&&`.
+- `1'b0` dan `1'b1`: literal 1-bit. Nama signal sebagai status tidak membuatnya menyimpan nilai.
 
-Contoh generik berikut hanya menunjukkan bentuk module dan port:
+Nama `p`, `q`, dan `z` hanya contoh; expression tersebut bukan rancangan problem.
 
-```verilog
-module demo_wire (
-    input  wire [4:0] in_bus,
-    output wire [4:0] out_bus
-);
-    assign out_bus = in_bus;
-endmodule
-```
+---
 
-### Continuous assignment
+## BAGIAN B — Engineering Notes
 
-`assign` menyatakan hubungan yang terus berlaku. Saat nilai di sisi kanan berubah, simulator menjadwalkan pembaruan sisi kiri; ini bukan langkah program yang hanya dijalankan sekali.
+Isi singkat dengan bahasamu sendiri; poin atau gambar cukup. Simpan prediction awal, lalu catat koreksi penting di Result.
 
-```verilog
-wire sig_p;
-wire sig_q;
-wire sig_r;
-assign sig_r = sig_p & sig_q;
-```
+### 1. Understanding Check
 
-Contoh-contoh dalam reference adalah potongan terpisah. Signal input contoh harus mempunyai penggerak jika dipakai dalam rancangan nyata.
-
-### Operators dan literal
-
-| Syntax | Makna umum |
-|---|---|
-| `~` | Bitwise NOT: membalik setiap bit operand |
-| `&`, `\|`, `^` | Bitwise AND, OR, XOR pada posisi bit yang bersesuaian |
-| `!` | Logical NOT: memeriksa apakah operand bernilai logis salah |
-| `&&`, `\|\|` | Logical AND, OR; menghasilkan keputusan logis 1-bit |
-| `==`, `!=` | Memeriksa kesamaan atau ketidaksamaan nilai |
-| `>`, `<`, `>=`, `<=` | Perbandingan; interpretasi signed/unsigned harus konsisten |
-| `1'b0` | Literal 1-bit dalam binary |
-| `5'b10110` | Literal 5-bit dalam binary |
-| `12'h35A` | Literal 12-bit dalam hexadecimal |
-
-Gunakan tanda kurung agar maksud pengelompokan expression jelas. Untuk latihan ini, deklarasikan data sebagai unsigned dan hindari mencampur width tanpa alasan yang dapat kamu jelaskan.
-
-### Width hasil expression
-
-Bitwise operation bekerja per bit, sedangkan logical operation dan comparison menghasilkan keputusan 1-bit. Jangan menganggap `~` sama dengan `!`, atau `&` sama dengan `&&`, pada vector.
-
-Output yang ditulis melalui `assign` dapat dideklarasikan sebagai `output wire`. Pemberian nama sebuah signal sebagai status tidak membuatnya menjadi register; jenis hardware mengikuti perilaku yang dijelaskan RTL.
-
-## BAGIAN B — My Engineering Worksheet
-
-Isi bagian 1–11 sebelum menulis RTL. Catat prediction awal dengan jujur; jika salah, tulis koreksinya setelah simulation agar proses berpikirmu tetap terlihat. Semua ruang jawaban di bawah sengaja kosong.
-
-### 1. What is this circuit supposed to do?
+1. Apakah kedua channel bersaing, atau dapat memperoleh grant bersamaan? Apa akibatnya jika hanya B diblokir?
+2. Apa beda channel yang tidak meminta dengan channel yang meminta tetapi ditolak?
+3. Saat `system_on=0`, bagaimana makna `denied` untuk keadaan ada permintaan dan tidak ada permintaan?
+4. Bisakah `activity` dan `denied` aktif bersamaan? Jelaskan situasi yang mendukung jawabanmu.
 
 Jawaban saya:
 
 ---
 
-### 2. Inputs
+### 2. Logic Design
 
-| Signal | Width | Function |
-|---|---:|---|
-| | | |
-| | | |
-
-### 3. Outputs
-
-| Signal | Width | Function |
-|---|---:|---|
-| | | |
-| | | |
-
-### 4. Data Signals
-
-Jawaban saya:
+Behavior utama dengan bahasa saya:
 
 ---
 
-### 5. Control Signals
-
-Jawaban saya:
+Logic equation untuk keputusan dan status saya:
 
 ---
 
-### 6. My Hardware Prediction
-
-Menurut saya hardware yang dibutuhkan:
+Logic circuit / diagram saya:
 
 ---
 
-Alasan:
+### 3. Prediction
+
+Gunakan case asli berikut. Urutan input: (`system_on`, `req_a`, `req_b`, `ready_a`, `ready_b`, `block_a`, `block_b`). Isi semua kolom output sebelum RTL dan simulation. Tidak perlu menulis 128 baris secara manual; pengujian exhaustive tetap mengikuti `problem.md`.
+
+| Case | Input | `grant_a` | `grant_b` | `activity` | `denied` |
+|---|---|---|---|---|---|
+| 1 | `(1, 0, 0, 1, 1, 0, 0)` |  |  |  |  |
+| 2 | `(1, 1, 0, 1, 0, 0, 1)` |  |  |  |  |
+| 3 | `(1, 1, 1, 1, 1, 0, 0)` |  |  |  |  |
+| 4 | `(1, 1, 1, 1, 0, 0, 0)` |  |  |  |  |
+| 5 | `(1, 1, 1, 1, 1, 1, 0)` |  |  |  |  |
+| 6 | `(0, 1, 1, 1, 1, 0, 0)` |  |  |  |  |
+| 7 | `(0, 0, 0, 1, 1, 1, 1)` |  |  |  |  |
+| 8 | `(1, 0, 1, 0, 1, 1, 1)` |  |  |  |  |
+
+Alasan / perhitungan untuk case penting:
 
 ---
 
-### 7. My Architecture
+### 4. Implementation Plan
 
-Block / signal flow dan width:
-
----
-
-Pilihan pembagian module dan alasan:
+Rencana RTL singkat:
 
 ---
 
-| Module / instance yang saya usulkan | Responsibility | Input dan width | Output dan width |
-|---|---|---|---|
-| | | | |
+### 5. Result
 
-### 8. Intermediate Signals I May Need
-
-| Signal | Width | Penggerak | Pengguna | Tujuan |
-|---|---:|---|---|---|
-| | | | | |
-
-### 9. Answers to Pre-Coding Questions
-
-Nomor Q di bawah mengikuti urutan pertanyaan pada bagian 5 `problem.md`.
-
-### Q1
-
-Jawaban saya:
+Simulation — PASS / FAIL + catatan penting:
 
 ---
 
-### Q2
-
-Jawaban saya:
+Waveform — hal penting yang diamati:
 
 ---
 
-### Q3
-
-Jawaban saya:
+Synthesis — hardware / cell utama yang ditemukan:
 
 ---
 
-### Q4
-
-Jawaban saya:
+Bug / mistake:
 
 ---
 
-### Q5
-
-Jawaban saya:
-
----
-
-### Q6
-
-Jawaban saya:
-
----
-
-### 10. Prediction Before Simulation
-
-Isi seluruh output yang diminta, bukan hanya output data utama. Salin atau uraikan input tiap case dari spesifikasi.
-
-| Case | Input | My Predicted Output |
-|---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
-| 6 | | |
-| 7 | | |
-| 8 | | |
-
-Alasan atau perhitungan manual saya:
-
----
-
-### 11. RTL Plan
-
-Sebelum coding, rencana implementasi saya:
-
----
-
-Rencana pengujian dan case tambahan buatan saya:
-
----
-
-### 12. After Simulation
-
-Apakah hasil simulation sama dengan prediction?
-
----
-
-Jika tidak, kesalahan saya berada di:
-
----
-
-| Case yang berbeda | Prediction awal | Hasil pengamatan | Penyebab dan perbaikan |
-|---|---|---|---|
-| | | | |
-
-Bagian testbench yang saya tulis sendiri / masih dibantu:
-
----
-
-### 13. Waveform Observation
-
-Hal penting yang saya lihat:
-
----
-
-Signal dan case yang saya periksa, beserta lokasi VCD / catatan:
-
----
-
-### 14. Before Synthesis Prediction
-
-Saya memperkirakan hardware hasil synthesis berupa:
-
----
-
-Alasan dan dugaan jalur logic terpanjang:
-
----
-
-### 15. After Synthesis
-
-Command yang saya jalankan dan lokasi log:
-
----
-
-Cell / logic dan hierarchy yang dihasilkan:
-
----
-
-Apakah sesuai prediction? Apa yang berubah atau dioptimasi?
-
----
-
-Jawaban saya atas Synthesis Questions pada problem:
-
----
-
-Hal yang belum dapat disimpulkan dari laporan ini:
-
----
-
-### 16. What I Learned
-
----
-
-### 17. Mistakes
-
----
-
-### 18. Things I Still Don't Understand
+What I learned:
 
 ---

@@ -1,318 +1,158 @@
 # Notes — Problem 06
 
-## BAGIAN A — Syntax / Concept Reference
+## BAGIAN A — Concept Reference
 
-Reference ini mengingatkan syntax yang sudah dipelajari. Nama dan contoh bersifat generik, bukan rancangan untuk problem. Kamu menentukan sendiri expression, hardware, serta batas module yang sesuai spesifikasi.
+`module` mendefinisikan blok; port `input wire` / `output wire` menjadi batasnya. `wire` menyambungkan signal. `assign` menyatakan hubungan combinational yang terus berlaku; tidak ada urutan eksekusi antar-`assign` seperti langkah software.
 
-### Module, port, dan wire
+Contoh berikut terpisah dan generik; `bus_p` dianggap 12-bit:
 
-`module` mendefinisikan satu jenis blok. Port menjadi batas input-output blok tersebut. `wire` menyatakan sambungan signal; deklarasinya sendiri tidak berarti ada penyimpanan.
+| Syntax | Pengingat |
+|---|---|
+| `wire [11:0] bus_p;` | Vector dengan 12 posisi bit |
+| `bus_p[8]` | Bit-select: mengambil 1 bit |
+| `bus_p[6:4]` | Part-select tetap: mengambil 3 bit |
+| `{3'b101, 2'b10}` | Concatenation: menggabungkan menjadi 5 bit; bagian kiri menempati bit tinggi |
+| `{3{2'b10}}` | Replication: mengulang pola menjadi 6 bit |
+| `flag_x ? bus_p : bus_q` | Untuk kondisi 0/1: pilih `bus_p` saat 1, `bus_q` saat 0; samakan width alternatif |
+| `5'b10110`, `12'h35A` | Literal dengan ukuran dan basis yang eksplisit |
 
-Contoh generik berikut hanya menunjukkan bentuk module dan port:
+`~`, `&`, `|`, `^` adalah bitwise NOT, AND, OR, XOR. `!`, `&&`, `||` adalah logical NOT, AND, OR dengan hasil 1-bit. `==`, `!=`, `<`, `>`, `<=`, `>=` menghasilkan hasil perbandingan 1-bit. Gunakan data unsigned dan periksa width expression sebelum disambungkan.
+
+Module instantiation membuat instance dari sebuah definisi. Contoh ini hanya menunjukkan syntax koneksi:
 
 ```verilog
-module demo_wire (
-    input  wire [4:0] in_bus,
-    output wire [4:0] out_bus
+module demo_link (
+    input  wire [4:0] in_port,
+    output wire [4:0] out_port
 );
-    assign out_bus = in_bus;
+    assign out_port = in_port;
 endmodule
 ```
 
-### Continuous assignment
-
-`assign` menyatakan hubungan yang terus berlaku. Saat nilai di sisi kanan berubah, simulator menjadwalkan pembaruan sisi kiri; ini bukan langkah program yang hanya dijalankan sekali.
+Di dalam module lain, jika `local_x` dan `local_y` adalah signal 5-bit:
 
 ```verilog
-wire sig_p;
-wire sig_q;
-wire sig_r;
-assign sig_r = sig_p & sig_q;
-```
-
-Contoh-contoh dalam reference adalah potongan terpisah. Signal input contoh harus mempunyai penggerak jika dipakai dalam rancangan nyata.
-
-### Operators dan literal
-
-| Syntax | Makna umum |
-|---|---|
-| `~` | Bitwise NOT: membalik setiap bit operand |
-| `&`, `\|`, `^` | Bitwise AND, OR, XOR pada posisi bit yang bersesuaian |
-| `!` | Logical NOT: memeriksa apakah operand bernilai logis salah |
-| `&&`, `\|\|` | Logical AND, OR; menghasilkan keputusan logis 1-bit |
-| `==`, `!=` | Memeriksa kesamaan atau ketidaksamaan nilai |
-| `>`, `<`, `>=`, `<=` | Perbandingan; interpretasi signed/unsigned harus konsisten |
-| `1'b0` | Literal 1-bit dalam binary |
-| `5'b10110` | Literal 5-bit dalam binary |
-| `12'h35A` | Literal 12-bit dalam hexadecimal |
-
-Gunakan tanda kurung agar maksud pengelompokan expression jelas. Untuk latihan ini, deklarasikan data sebagai unsigned dan hindari mencampur width tanpa alasan yang dapat kamu jelaskan.
-
-### Width hasil expression
-
-Bitwise operation bekerja per bit, sedangkan logical operation dan comparison menghasilkan keputusan 1-bit. Jangan menganggap `~` sama dengan `!`, atau `&` sama dengan `&&`, pada vector.
-
-Output yang ditulis melalui `assign` dapat dideklarasikan sebagai `output wire`. Pemberian nama sebuah signal sebagai status tidak membuatnya menjadi register; jenis hardware mengikuti perilaku yang dijelaskan RTL.
-
-### Vector, bit-select, dan part-select
-
-```verilog
-wire [11:0] sample_bus;
-wire single_bit;
-wire [2:0] portion;
-
-assign single_bit = sample_bus[8];
-assign portion = sample_bus[6:4];
-```
-
-`[11:0]` memiliki 12 posisi bit. Bit-select mengambil satu bit; part-select mengambil rentang tetap. Pada deklarasi menurun seperti ini, tulis part-select dengan indeks tinggi di kiri.
-
-### Concatenation dan replication
-
-```verilog
-wire [2:0] triad;
-wire [4:0] quintet;
-wire [7:0] joined_bus;
-wire [5:0] repeated_bus;
-
-assign joined_bus = {triad, quintet};
-assign repeated_bus = {3{2'b10}};
-```
-
-Concatenation menggabungkan bit tanpa penjumlahan. Elemen paling kiri mengisi posisi bit paling tinggi. Width gabungan adalah jumlah width semua elemen. Replication mengulang pola dengan jumlah tetap.
-
-### Conditional operator
-
-```verilog
-assign line_r = cond_x ? line_p : line_q;
-```
-
-Pada kondisi 0/1, expression memilih nilai alternatif sesuai kondisi. Usahakan kedua alternatif mempunyai width yang sesuai dengan tujuan assignment. Contoh ini tidak menentukan architecture problem.
-
-### Module instantiation dan named port connection
-
-Definisi `demo_wire` pada contoh awal dapat digunakan sebagai berikut. `bus_k` dan `bus_m` merupakan nama signal lokal contoh, masing-masing 5 bit.
-
-```verilog
-demo_wire u_example (
-    .in_bus(bus_k),
-    .out_bus(bus_m)
+demo_link u_demo (
+    .in_port(local_x),
+    .out_port(local_y)
 );
 ```
 
-`demo_wire` adalah nama jenis module; `u_example` adalah nama instance. Pada `.in_bus(bus_k)`, nama di kiri adalah port milik module yang di-instance, sedangkan nama di dalam tanda kurung adalah signal pada module yang memuat instance.
+`demo_link` adalah jenis module; `u_demo` adalah nama instance. Pada `.in_port(local_x)`, kiri adalah nama port submodule, dalam kurung adalah signal di module induk. Named port connection memakai nama, bukan urutan; arah dan width tetap harus cocok.
 
-Named port connection dipasangkan berdasarkan nama, bukan urutan tulisan. Tetap periksa arah dan width. Dua instance dari satu definisi adalah dua instance hardware sebelum optimasi; ini bukan pemanggilan function yang bergantian memakai satu blok.
+Satu definisi yang dipakai beberapa kali membentuk beberapa instance hardware sebelum optimasi. Hierarchy adalah susunan module dan instance, bukan urutan eksekusi. Deklarasi `wire` saja belum memberikan penggerak.
 
-Intermediate signal menghubungkan output suatu instance ke input instance lain sesuai kontrak port. Mendeklarasikan `wire` saja tidak memberinya nilai; harus ada penggerak yang benar.
+---
 
-## BAGIAN B — My Engineering Worksheet
+## BAGIAN B — Engineering Notes
 
-Isi bagian 1–11 sebelum menulis RTL. Catat prediction awal dengan jujur; jika salah, tulis koreksinya setelah simulation agar proses berpikirmu tetap terlihat. Semua ruang jawaban di bawah sengaja kosong.
+Isi singkat dengan bahasamu sendiri; poin atau gambar cukup. Simpan prediction awal, lalu catat koreksi penting di Result.
 
-### 1. What is this circuit supposed to do?
+### 1. Understanding Check
+
+1. Apa arti atomic untuk destination A dan B jika hanya satu endpoint memenuhi syarat?
+2. Apa batas kewenangan `override_lock` terhadap lock, ready, sistem nonaktif, dan destination tidak sah?
+3. Apa beda command tidak hadir dengan command hadir tetapi ditolak? Status apa yang masih dapat aktif saat `dispatch_on=0`?
+4. Untuk command satu tujuan, apakah kondisi endpoint lain boleh memengaruhi penerimaan?
+5. Bagaimana pembagian tanggung jawab pilihanmu menjaga payload, tag, `accepted`, dan `rejected` tetap konsisten?
 
 Jawaban saya:
 
 ---
 
-### 2. Inputs
+### 2. Architecture
 
-| Signal | Width | Function |
-|---|---:|---|
-| | | |
-| | | |
+Pisahkan tanggung jawab terlebih dahulu, lalu tentukan satu atau beberapa module sesuai kebutuhan. Tabel architecture tidak wajib.
 
-### 3. Outputs
-
-| Signal | Width | Function |
-|---|---:|---|
-| | | |
-| | | |
-
-### 4. Data Signals
-
-Jawaban saya:
+Hierarchy / block diagram saya:
 
 ---
 
-### 5. Control Signals
-
-Jawaban saya:
+Responsibility setiap block — input yang diperlukan, output yang dijanjikan, dan kondisi gagal yang ditangani:
 
 ---
 
-### 6. My Hardware Prediction
-
-Menurut saya hardware yang dibutuhkan:
+Signal, arah port, dan width yang melewati batas module:
 
 ---
 
-Alasan:
+### 3. Data and Control Flow
+
+Tunjukkan perjalanan payload, tag, serta keputusan dan status penerimaan. Boleh anotasi diagram architecture yang sama.
+
+Alur dan ketergantungan menurut saya:
 
 ---
 
-### 7. My Architecture
+### 4. Logic Design
 
-Block / signal flow dan width:
-
----
-
-Pilihan pembagian module dan alasan:
+Logic equation / aturan keputusan yang saya turunkan:
 
 ---
 
-| Module / instance yang saya usulkan | Responsibility | Input dan width | Output dan width |
+Logic circuit / datapath saya untuk keputusan penerimaan:
+
+---
+
+### 5. Prediction
+
+Isi sebelum RTL dan simulation; setiap case independen.
+
+- Input: (`command`, `dispatch_on`, `ready`, `locked`).
+- Uraian field: (present, destination, override_lock, tag, payload).
+- Prediksi semua output: (`a_data`, `b_data`, `a_tag`, `b_tag`, `accepted`, `rejected`, `bad_command`).
+
+Tulis tuple pada kolom kosong sesuai urutan tersebut.
+
+| Case | Input | Uraian field command | Prediksi semua output |
 |---|---|---|---|
-| | | | |
+| 1 | `(16'h8A35, 1, 2'b01, 2'b00)` |  |  |
+| 2 | `(16'hAA35, 1, 2'b10, 2'b01)` |  |  |
+| 3 | `(16'hCA35, 1, 2'b11, 2'b00)` |  |  |
+| 4 | `(16'hCA35, 1, 2'b01, 2'b00)` |  |  |
+| 5 | `(16'hCA35, 1, 2'b11, 2'b10)` |  |  |
+| 6 | `(16'hDA35, 1, 2'b11, 2'b11)` |  |  |
+| 7 | `(16'hDA35, 1, 2'b01, 2'b11)` |  |  |
+| 8 | `(16'hEA35, 1, 2'b11, 2'b00)` |  |  |
+| 9 | `(16'hFA35, 0, 2'b11, 2'b00)` |  |  |
+| 10 | `(16'h0A35, 1, 2'b11, 2'b00)` |  |  |
+| 11 | `(16'h9A35, 0, 2'b11, 2'b11)` |  |  |
+| 12 | `(16'h8000, 1, 2'b01, 2'b00)` |  |  |
 
-### 8. Intermediate Signals I May Need
-
-| Signal | Width | Penggerak | Pengguna | Tujuan |
-|---|---:|---|---|---|
-| | | | | |
-
-### 9. Answers to Pre-Coding Questions
-
-Nomor Q di bawah mengikuti urutan pertanyaan pada bagian 5 `problem.md`.
-
-### Q1
-
-Jawaban saya:
-
----
-
-### Q2
-
-Jawaban saya:
+Alasan untuk case penting:
 
 ---
 
-### Q3
+### 6. Verification Plan
 
-Jawaban saya:
+Pilih beberapa kondisi yang paling rawan salah pada desainmu dan cara mengeceknya. Target lengkap tetap mengikuti `problem.md`; tidak perlu menyalin seluruh daftar.
 
----
-
-### Q4
-
-Jawaban saya:
+Kondisi penting dan cara memeriksanya:
 
 ---
 
-### Q5
+### 7. Result
 
-Jawaban saya:
-
----
-
-### Q6
-
-Jawaban saya:
+Simulation — PASS / FAIL + catatan penting:
 
 ---
 
-### 10. Prediction Before Simulation
-
-Isi seluruh output yang diminta, bukan hanya output data utama. Salin atau uraikan input tiap case dari spesifikasi.
-
-| Case | Input | My Predicted Output |
-|---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
-| 6 | | |
-| 7 | | |
-| 8 | | |
-| 9 | | |
-| 10 | | |
-| 11 | | |
-| 12 | | |
-
-Alasan atau perhitungan manual saya:
+Waveform — hal penting yang diamati:
 
 ---
 
-### 11. RTL Plan
-
-Sebelum coding, rencana implementasi saya:
+Synthesis — hardware / cell utama yang ditemukan:
 
 ---
 
-Rencana pengujian dan case tambahan buatan saya:
+Architecture vs synthesis — perbedaan penting:
 
 ---
 
-### 12. After Simulation
-
-Apakah hasil simulation sama dengan prediction?
+Bug / mistake:
 
 ---
 
-Jika tidak, kesalahan saya berada di:
-
----
-
-| Case yang berbeda | Prediction awal | Hasil pengamatan | Penyebab dan perbaikan |
-|---|---|---|---|
-| | | | |
-
-Bagian testbench yang saya tulis sendiri / masih dibantu:
-
----
-
-### 13. Waveform Observation
-
-Hal penting yang saya lihat:
-
----
-
-Signal dan case yang saya periksa, beserta lokasi VCD / catatan:
-
----
-
-### 14. Before Synthesis Prediction
-
-Saya memperkirakan hardware hasil synthesis berupa:
-
----
-
-Alasan dan dugaan jalur logic terpanjang:
-
----
-
-### 15. After Synthesis
-
-Command yang saya jalankan dan lokasi log:
-
----
-
-Cell / logic dan hierarchy yang dihasilkan:
-
----
-
-Apakah sesuai prediction? Apa yang berubah atau dioptimasi?
-
----
-
-Jawaban saya atas Synthesis Questions pada problem:
-
----
-
-Hal yang belum dapat disimpulkan dari laporan ini:
-
----
-
-### 16. What I Learned
-
----
-
-### 17. Mistakes
-
----
-
-### 18. Things I Still Don't Understand
+What I learned:
 
 ---
